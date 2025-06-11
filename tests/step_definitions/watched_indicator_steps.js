@@ -64,7 +64,7 @@ When('I click the "Watch on YouTube" button for the video titled {string}', asyn
   const card = page.locator('#videoList .video-card', { hasText: title });
   const button = card.locator('.watch-button');
   await button.click();
-  await page.waitForTimeout(500); // allow re-render
+  await card.locator('.watched-indicator').waitFor({ state: 'visible' });
 });
 
 Then('I should see a "Watched" indicator on the video card for {string}', async ({ page }, title) => {

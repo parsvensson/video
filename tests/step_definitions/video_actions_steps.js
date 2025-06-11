@@ -21,7 +21,7 @@ When('the user clicks the watch button for the first video', async ({ page }) =>
   });
   const button = page.locator('#videoList .video-card .watch-button').first();
   await button.click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => window.__openCalled === true);
 });
 
 Then('watch history should contain {int} entry', async ({ page }, expected) => {
