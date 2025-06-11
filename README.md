@@ -193,5 +193,6 @@ To add new tests to the project:
     *   `js/utils/`: Contains helper functions for video manipulation and YouTube interaction.
 *   **Styling:** CSS is located in `css/style.css`.
 *   **No Build Step (for MVP):** The MVP uses native ES6 modules, so no transpilation or bundling is strictly necessary for modern browsers if served correctly (see "Running the Application" point 3).
+*   
 
 
