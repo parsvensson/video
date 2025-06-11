@@ -23,11 +23,12 @@ When('the user selects the {string} file for upload', async ({ page }, fileName)
 
 Then('the video data from {string} should be loaded', async ({ page }, fileName) => {
   // Wait for the videoList container to have at least one child element, which should be a video card.
-  await page.waitForSelector('#videoList > *', { timeout: 12000 });
+  await page.waitForSelector('#videoList > *', { timeout: 12000 }); 
+  await page.waitForTimeout(500); 
 });
 
 Then('a list of videos should be displayed on the page', async ({ page }) => {
-  await page.waitForSelector('#videoList .video-card', { timeout: 5000 });
+  await page.waitForTimeout(1000); // Keep the pause that helped stability
   const videoCards = await page.locator('#videoList .video-card').count();
   assert.ok(videoCards > 0, 'No video cards were displayed on the page.');
 });

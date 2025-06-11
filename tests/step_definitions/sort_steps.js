@@ -5,7 +5,7 @@ const assert = require('assert');
 
 When('the user sorts by {string}', async ({ page }, sortValue) => {
   await page.selectOption('#sortOptions', sortValue);
-  await page.waitForSelector('#videoList .video-card h3');
+  await page.waitForTimeout(500);
 });
 
 Then('the first video title should be {string}', async ({ page }, expectedTitle) => {

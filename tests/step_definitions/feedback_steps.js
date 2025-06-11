@@ -14,12 +14,8 @@ When('the user clicks {string} on the first video', async ({ page }, label) => {
     'Right Level': '.right-level-button'
   };
   const selector = `#videoList .video-card ${map[label]}`;
-  const current = await page.evaluate(() => localStorage.getItem('targetDifficulty'));
   await page.locator(selector).first().click();
-  await page.waitForFunction(
-    prev => localStorage.getItem('targetDifficulty') !== prev,
-    current
-  );
+  await page.waitForTimeout(500);
 });
 
 Then('the target difficulty should be {int}', async ({ page }, expected) => {
