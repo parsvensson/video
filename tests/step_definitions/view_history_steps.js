@@ -141,11 +141,17 @@ Given('the user has watched some videos', async function ({ page }) {
   // This will trigger app.js's handleWatchVideo -> trackWatchedVideo, which updates localStorage.
   if (watchButtons.length > 0) {
     await watchButtons[0].click();
-    await page.waitForTimeout(250); // Allow a brief moment for async localStorage update by the app
+    await page.waitForFunction(() => {
+      const history = JSON.parse(localStorage.getItem('watchedHistory') || '[]');
+      return history.length >= 1;
+    });
   }
   if (watchButtons.length > 1) {
     await watchButtons[1].click();
-    await page.waitForTimeout(250); // Allow a brief moment for async localStorage update by the app
+    await page.waitForFunction(() => {
+      const history = JSON.parse(localStorage.getItem('watchedHistory') || '[]');
+      return history.length >= 2;
+    });
   }
 
   // Optional: For debugging, verify localStorage after clicks

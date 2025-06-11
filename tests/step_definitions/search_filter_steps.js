@@ -6,22 +6,22 @@ const assert = require('assert');
 When('the user searches for {string}', async ({ page }, term) => {
   const searchBar = page.locator('#searchBar');
   await searchBar.fill(term);
-  await page.waitForTimeout(500);
+  await page.waitForSelector('#videoList > *');
 });
 
 When('the user filters by level {string}', async ({ page }, level) => {
   await page.selectOption('#levelFilter', level);
-  await page.waitForTimeout(500);
+  await page.waitForSelector('#videoList > *');
 });
 
 When('the user filters by sound quality {string}', async ({ page }, quality) => {
   await page.selectOption('#soundQualityFilter', quality);
-  await page.waitForTimeout(500);
+  await page.waitForSelector('#videoList > *');
 });
 
 When('the user filters by guide {string}', async ({ page }, guide) => {
   await page.selectOption('#guideFilter', guide);
-  await page.waitForTimeout(500);
+  await page.waitForSelector('#videoList > *');
 });
 
 Then(/^exactly (\d+) video(?:s)? should be displayed$/, async ({ page }, expected) => {
