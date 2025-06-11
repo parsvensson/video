@@ -1,0 +1,145 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "_id": {
+        "type": "string",
+        "description": "Unique identifier for the video, likely an ObjectId."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of tags associated with the video."
+      },
+      "guides": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of guides/presenters in the video."
+      },
+      "publishedAt": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp of when the video was published."
+      },
+      "duration": {
+        "type": "integer",
+        "description": "Duration of the video in seconds."
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the video."
+      },
+      "level": {
+        "type": "string",
+        "enum": [
+          "intermediate",
+          "beginner",
+          "advanced",
+          "superbeginner"
+        ],
+        "description": "Difficulty level of the video."
+      },
+      "private": {
+        "type": "boolean",
+        "description": "Indicates if the video is private or public."
+      },
+      "endCutout": {
+        "type": "integer",
+        "description": "Cutout time in seconds from the end of the video."
+      },
+      "difficultyScore": {
+        "type": "integer",
+        "description": "A numerical score representing the video's difficulty."
+      },
+      "soundQuality": {
+        "type": "string",
+        "enum": [
+          "podcast-friendly",
+          "other"
+        ],
+        "description": "Quality of the sound in the video."
+      },
+      "seriesId": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Identifier for the series this video belongs to, if any."
+      },
+      "hasAccess": {
+        "type": "boolean",
+        "description": "Indicates if the user has access to this video."
+      },
+      "hostingId": {
+        "type": "string",
+        "description": "Identifier for the video on the hosting platform (e.g., YouTube ID)."
+      },
+      "description": {
+        "type": "string",
+        "description": "A brief description of the video content."
+      },
+      "audioDownload": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to download the audio of the video."
+      },
+      "videoDownload": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to download the video."
+      },
+      "sources": {
+        "type": "object",
+        "properties": {
+          "bunny": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL related to BunnyCDN source."
+          },
+          "youtube": {
+            "type": "string",
+            "description": "YouTube video ID."
+          }
+        },
+        "required": [
+          "bunny",
+          "youtube"
+        ],
+        "description": "Source URLs for the video content."
+      },
+      "episodeNumber": {
+        "type": "integer",
+        "description": "Episode number if the video is part of a series (optional)."
+      },
+      "subtitles": {
+        "type": "string",
+        "description": "Subtitles for the video, typically in WebVTT format (optional)."
+      }
+    },
+    "required": [
+      "_id",
+      "tags",
+      "guides",
+      "publishedAt",
+      "duration",
+      "title",
+      "level",
+      "private",
+      "endCutout",
+      "difficultyScore",
+      "soundQuality",
+      "hasAccess",
+      "hostingId",
+      "description",
+      "audioDownload",
+      "videoDownload",
+      "sources"
+    ],
+    "additionalProperties": false
+  }
+}
