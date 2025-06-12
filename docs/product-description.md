@@ -1,14 +1,14 @@
-# VidDex: Your Personal Video Navigator - Updated Product Description
+# VideoBrowser: Your Personal Video Navigator - Updated Product Description
 
 ## 1. Overview & Core Purpose
 
-VidDex is a desktop application designed to help users easily browse, find, and launch YouTube videos from their extensive local JSON metadata file. The primary goal is to make a large personal video library more accessible and useful by helping users discover content that matches their current learning or knowledge level.
+VideoBrowser is a desktop application designed to help users easily browse, find, and launch YouTube videos from their extensive local JSON metadata file. The primary goal is to make a large personal video library more accessible and useful by helping users discover content that matches their current learning or knowledge level.
 
 ## 2. Key User Experience & Flow
 
 ### 2.1. Effortless Start & Focused Browsing
 
-*   Upon launch, VidDex loads the user's video data from the specified JSON file.
+*   Upon launch, VideoBrowser loads the user's video data from the specified JSON file.
 
    It immediately presents a manageable list of videos (e.g., a configurable number, perhaps 15-30 items). This list is dynamically selected to be the closest to the user's *current target difficulty level**.
 
@@ -18,9 +18,9 @@ VidDex is a desktop application designed to help users easily browse, find, and 
 
 *   The user primarily adjusts this target difficulty implicitly:
 
-       By providing *"Too Easy"** or "Too Hard" feedback on individual videos in the list via buttons on each video card. This feedback nudges VidDex's understanding of the user's preferred level.
+      By providing *"Too Easy"** or "Too Hard" feedback on individual videos in the list via buttons on each video card. This feedback nudges VideoBrowser's understanding of the user's preferred level.
 
-*   Over time, VidDex learns the user's preferred difficulty, automatically adjusting the target to show relevant content in future sessions.
+*   Over time, VideoBrowser learns the user's preferred difficulty, automatically adjusting the target to show relevant content in future sessions.
 
 ### 2.2. Informative Video Display
 
@@ -62,7 +62,7 @@ Each video in the list prominently displays:
 
 ## 3. Personalization & Learning
 
-   *Watched History:** VidDex will keep track of videos the user has launched.
+   *Watched History:** VideoBrowser will keep track of videos the user has launched.
 
    *Difficulty Preference Learning:**
 

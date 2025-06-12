@@ -1,7 +1,7 @@
 \
 # Technical Implementation Plan - Phase 2 & 3
 
-This document outlines the technical implementation details for Phase 2 (Enhanced User Experience) and Phase 3 (Advanced Features) of the VidDex application, building upon the foundation of Phase 1.
+This document outlines the technical implementation details for Phase 2 (Enhanced User Experience) and Phase 3 (Advanced Features) of the VideoBrowser application, building upon the foundation of Phase 1.
 
 ## Phase 2: Enhanced User Experience
 
@@ -142,7 +142,7 @@ This document outlines the technical implementation details for Phase 2 (Enhance
           const blob = new Blob([JSON.stringify(prefs, null, 2)], { type: 'application/json' });
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
-          link.download = 'viddex_preferences.json';
+          link.download = 'videobrowser_preferences.json';
           link.click();
           URL.revokeObjectURL(link.href);
         }
