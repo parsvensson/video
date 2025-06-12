@@ -76,3 +76,48 @@ export async function getVideosFromDB() {
         };
     });
 }
+
+export async function exportAppState() {
+    const db = await openDB();
+    const videos = await new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_NAME], 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+
+    const state = {
+        videos,
+        localStorage: {
+            targetDifficulty: localStorage.getItem('targetDifficulty'),
+            feedbackHistory: JSON.parse(localStorage.getItem('feedbackHistory') || '[]'),
+            watchedHistory: JSON.parse(localStorage.getItem('watchedHistory') || '[]'),
+            watchedDates: JSON.parse(localStorage.getItem('watchedDates') || '{}'),
+            currentPage: localStorage.getItem('currentPage')
+        }
+    };
+
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'videobrowser_state.json';
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    link.remove();
+}
+
+export async function importAppState(file) {
+    const text = await file.text();
+    const state = JSON.parse(text);
+    const ls = state.localStorage || {};
+    if (ls.targetDifficulty !== undefined) localStorage.setItem('targetDifficulty', ls.targetDifficulty);
+    if (ls.feedbackHistory) localStorage.setItem('feedbackHistory', JSON.stringify(ls.feedbackHistory));
+    if (ls.watchedHistory) localStorage.setItem('watchedHistory', JSON.stringify(ls.watchedHistory));
+    if (ls.watchedDates) localStorage.setItem('watchedDates', JSON.stringify(ls.watchedDates));
+    if (ls.currentPage !== undefined) localStorage.setItem('currentPage', ls.currentPage);
+    if (Array.isArray(state.videos)) {
+        await saveVideosToDB(state.videos);
+    }
+}

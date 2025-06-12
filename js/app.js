@@ -2,7 +2,7 @@ import { loadVideoData, validateBasicStructure } from './dataLoader.js';
 import { createVideoCard, formatDuration } from './ui/videoCard.js';
 import { openYouTubeVideo, trackWatchedVideo } from './utils/youtubeUtils.js';
 import { sortByDifficulty, searchVideos, applyFilters } from './utils/videoUtils.js';
-import { getVideosFromDB, saveVideosToDB } from './utils/dbUtils.js'; // Added getVideosFromDB and saveVideosToDB
+import { getVideosFromDB, saveVideosToDB, exportAppState, importAppState } from './utils/dbUtils.js';
 import { 
     loadTargetDifficulty as loadDifficultySetting,
     saveTargetDifficulty as saveDifficultySetting,
@@ -31,6 +31,9 @@ const muchEasierPageButton = document.getElementById('muchEasierPage');
 const muchHarderPageButton = document.getElementById('muchHarderPage');
 const clearFiltersButton = document.getElementById('clearFiltersButton');
 const viewHistoryButton = document.getElementById('viewHistoryButton');
+const exportStateButton = document.getElementById('exportStateButton');
+const importStateButton = document.getElementById('importStateButton');
+const importStateInput = document.getElementById('importStateInput');
 
 // --- Initialization ---
 async function initializeApp() {
@@ -47,6 +50,15 @@ async function initializeApp() {
     muchHarderPageButton.addEventListener('click', () => changePage(currentPage + 5)); // Jump 5 pages
     clearFiltersButton.addEventListener('click', clearAllFilters);
     viewHistoryButton.addEventListener('click', showViewHistoryPopup);
+    exportStateButton.addEventListener('click', exportAppState);
+    importStateButton.addEventListener('click', () => importStateInput.click());
+    importStateInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            await importAppState(file);
+            window.location.reload();
+        }
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
