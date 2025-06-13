@@ -1,5 +1,20 @@
 import { getLatestFeedbackForVideo } from '../learning/difficultyManager.js';
 
+function appendClickableItems(element, label, items, className) {
+    element.textContent = `${label}: `;
+    if (Array.isArray(items) && items.length > 0) {
+        items.forEach((item, index) => {
+            if (index > 0) element.append(', ');
+            const span = document.createElement('span');
+            span.className = className;
+            span.textContent = item;
+            element.appendChild(span);
+        });
+    } else {
+        element.append('N/A');
+    }
+}
+
 export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onTooHardCallback, onRightLevelCallback, isWatched) {
     const cardElement = document.createElement('div');
     cardElement.className = 'video-card';
@@ -38,7 +53,15 @@ export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onToo
 
     const guidesElement = document.createElement('p');
     guidesElement.className = 'guides';
-    guidesElement.textContent = `Guides: ${video.guides.join(', ')}`;
+    appendClickableItems(guidesElement, 'Guides', video.guides, 'clickable-guide');
+    guidesElement.addEventListener('click', (event) => {
+        if (event.target.classList.contains('clickable-guide')) {
+            guidesElement.dispatchEvent(new CustomEvent('guideClicked', {
+                bubbles: true,
+                detail: event.target.textContent
+            }));
+        }
+    });
 
     const metadataElement = document.createElement('div');
     metadataElement.className = 'metadata';
@@ -91,7 +114,7 @@ export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onToo
     descriptionElement.textContent = `Description: ${video.description || 'N/A'}`;
 
     const tagsElement = document.createElement('p');
-    tagsElement.innerHTML = `Tags: ${video.tags && video.tags.length > 0 ? video.tags.map(tag => `<span class="clickable-tag">${tag}</span>`).join(', ') : 'N/A'}`;
+    appendClickableItems(tagsElement, 'Tags', video.tags, 'clickable-tag');
     tagsElement.addEventListener('click', (event) => {
         if (event.target.classList.contains('clickable-tag')) {
             tagsElement.dispatchEvent(new CustomEvent('tagClicked', {
@@ -102,7 +125,7 @@ export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onToo
     });
 
     const guidesDetailsElement = document.createElement('p');
-    guidesDetailsElement.innerHTML = `Guides: ${video.guides && video.guides.length > 0 ? video.guides.map(guide => `<span class="clickable-guide">${guide}</span>`).join(', ') : 'N/A'}`;
+    appendClickableItems(guidesDetailsElement, 'Guides', video.guides, 'clickable-guide');
     guidesDetailsElement.addEventListener('click', (event) => {
         if (event.target.classList.contains('clickable-guide')) {
             guidesDetailsElement.dispatchEvent(new CustomEvent('guideClicked', {

@@ -120,6 +120,13 @@ main {
     margin-bottom: 0.25rem;
 }
 
+.clickable-tag,
+.clickable-guide {
+    cursor: pointer;
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
 .video-card .watch-button {
     background-color: var(--primary-color);
     color: white;
