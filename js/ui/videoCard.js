@@ -94,10 +94,10 @@ export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onToo
     tagsElement.innerHTML = `Tags: ${video.tags && video.tags.length > 0 ? video.tags.map(tag => `<span class="clickable-tag">${tag}</span>`).join(', ') : 'N/A'}`;
     tagsElement.addEventListener('click', (event) => {
         if (event.target.classList.contains('clickable-tag')) {
-            // This assumes a global function or event dispatcher to handle tag clicks
-            // For now, let's log it. This should be connected to app.js search/filter
-            console.log(`Tag clicked: ${event.target.textContent}`);
-            // Example: dispatchEvent(new CustomEvent('tagClicked', { detail: event.target.textContent }));
+            tagsElement.dispatchEvent(new CustomEvent('tagClicked', {
+                bubbles: true,
+                detail: event.target.textContent
+            }));
         }
     });
 
@@ -105,9 +105,10 @@ export function createVideoCard(video, onWatchCallback, onTooEasyCallback, onToo
     guidesDetailsElement.innerHTML = `Guides: ${video.guides && video.guides.length > 0 ? video.guides.map(guide => `<span class="clickable-guide">${guide}</span>`).join(', ') : 'N/A'}`;
     guidesDetailsElement.addEventListener('click', (event) => {
         if (event.target.classList.contains('clickable-guide')) {
-            // Similar to tags, this should trigger a filter action
-            console.log(`Guide clicked: ${event.target.textContent}`);
-            // Example: dispatchEvent(new CustomEvent('guideClicked', { detail: event.target.textContent }));
+            guidesDetailsElement.dispatchEvent(new CustomEvent('guideClicked', {
+                bubbles: true,
+                detail: event.target.textContent
+            }));
         }
     });
 

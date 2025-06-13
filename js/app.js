@@ -43,6 +43,14 @@ async function initializeApp() {
     levelFilterElement.addEventListener('change', handleSearchAndFilter);
     soundQualityFilterElement.addEventListener('change', handleSearchAndFilter);
     guideFilterElement.addEventListener('change', handleSearchAndFilter);
+    videoListElement.addEventListener('tagClicked', (e) => {
+        searchBar.value = e.detail;
+        handleSearchAndFilter();
+    });
+    videoListElement.addEventListener('guideClicked', (e) => {
+        guideFilterElement.value = e.detail;
+        handleSearchAndFilter();
+    });
     sortOptionsElement.addEventListener('change', handleSortChange);
     prevPageButton.addEventListener('click', () => changePage(currentPage - 1));
     nextPageButton.addEventListener('click', () => changePage(currentPage + 1));
