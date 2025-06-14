@@ -28,3 +28,6 @@ const { Given, When, Then } = createBdd();
 
 - Each step receives the Playwright `page` via `async ({ page }) => { ... }`.
 - Use Node's `assert` module for assertions.
+
+## Tech stack and storage backend
+Please see the file: docs/technical-implementation.md
