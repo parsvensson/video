@@ -58,3 +58,32 @@ This document describes the current implementation of the VideoBrowser applicati
 └── docs/
     └── technical-implementation.md (this file)
 ```
+
+## Supabase Database
+
+A hosted Postgres instance on Supabase mirrors the local JSON data. The project
+URL is `https://dzxzmneyogcypfaqusgi.supabase.co` with the anonymous API key
+`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eHptbmV5b2djeXBmYXF1c2dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MTUxMTQsImV4cCI6MjA2NTQ5MTExNH0.M59Fd-oBAGNDconMvhfZy7tWtk8XIi71us2DUI73Sek`.
+
+The available table is `public.videos` defined as:
+
+```sql
+create table public.videos (
+  _id text primary key,
+  duration integer not null,
+  title text not null,
+  level text not null,
+  difficulty_score integer not null,
+  youtube_id text not null,
+  tags text[] null,
+  guides text[] null,
+  constraint videos_level_check check (
+    level = any (
+      array['intermediate', 'beginner', 'advanced', 'superbeginner']
+    )
+  )
+) tablespace pg_default;
+```
+
+During development set `window.SUPABASE_URL` and
+`window.SUPABASE_ANON_KEY` so `js/supabaseClient.js` can initialize the client.
