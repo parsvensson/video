@@ -84,6 +84,3 @@ create table public.videos (
   )
 ) tablespace pg_default;
 ```
-
-During development set `window.SUPABASE_URL` and
-`window.SUPABASE_ANON_KEY` so `js/supabaseClient.js` can initialize the client.
