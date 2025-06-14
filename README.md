@@ -57,6 +57,14 @@ The project uses plain HTML and JavaScript and requires no build step.
 3. Click **Choose File** and select your JSON data file.
 4. Browse and launch videos.
 
+### Supabase Configuration
+
+VideoBrowser can also read video metadata from a hosted Supabase project. Set
+`window.SUPABASE_URL` to `https://dzxzmneyogcypfaqusgi.supabase.co` and
+`window.SUPABASE_ANON_KEY` to
+`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eHptbmV5b2djeXBmYXF1c2dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MTUxMTQsImV4cCI6MjA2NTQ5MTExNH0.M59Fd-oBAGNDconMvhfZy7tWtk8XIi71us2DUI73Sek`
+before loading `index.html`.
+
 ## Running Tests
 
 Execute all Playwright tests with:
