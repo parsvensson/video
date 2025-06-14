@@ -1,5 +1,3 @@
-# Deprecated: This file describes the initial MVP and is kept for reference only
-
 # videobrowser: Technical Documentation - Phase 1 MVP
 
 This document provides a technical description of the implemented Phase 1 MVP of videobrowser, a desktop browser application for navigating and launching YouTube videos from a local JSON metadata file.
