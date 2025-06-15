@@ -5,7 +5,7 @@
     "test:e2e": "node serve-and-test.js",
     "report:e2e": "playwright show-report",
     "test:bdd": "playwright-bdd",
-    "build": "esbuild js/app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --sourcemap",
+    "build": "mkdir -p dist && cp index.html css/* favicon.ico dist/ && cp -r css dist/ && esbuild js/app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --sourcemap",
     "watch": "esbuild js/app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --sourcemap --watch"
   },
   "devDependencies": {
