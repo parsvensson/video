@@ -420,7 +420,12 @@ async function importAppState(file) {
 // js/supabaseClient.js
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 var SUPABASE_URL = window.SUPABASE_URL || "";
+console.log("Supabase URL:", SUPABASE_URL);
 var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "";
+console.log("Supabase Anon Key:", SUPABASE_ANON_KEY);
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("Supabase URL or Anon Key is missing. Please check environment variables or window object.");
+}
 var supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // js/utils/supabaseVideos.js
@@ -486,13 +491,38 @@ async function handleSignUp() {
   const email = signUpEmailInput.value;
   const password = signUpPasswordInput.value;
   authMessages.textContent = "";
+  console.log("Attempting sign-up with email:", email);
+  if (!email || !password) {
+    console.error("Email or password is empty during sign-up attempt.");
+    authMessages.textContent = "Email or password cannot be empty.";
+    return;
+  }
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
-    authMessages.textContent = `Sign-up error: ${error.message}`;
-    console.error("Sign-up error:", error);
+    console.error("Detailed sign-up error:", error);
+    if (error.message.includes("User already registered")) {
+      console.warn("Sign-up attempt for an already registered email:", email);
+      authMessages.textContent = "This email is already registered. Try logging in.";
+    } else if (error.message.includes("rate limit exceeded")) {
+      console.warn("Sign-up rate limit exceeded. Please try again later.");
+      authMessages.textContent = "Too many sign-up attempts. Please try again later.";
+    } else if (error.message.includes("network error")) {
+      console.error("Sign-up failed due to a network error. Check internet connection and Supabase status.");
+      authMessages.textContent = "Sign-up failed due to a network error. Please check your connection.";
+    } else if (error.message.toLowerCase().includes("password should be at least 6 characters")) {
+      console.warn("Sign-up failed due to a weak password.");
+      authMessages.textContent = "Password should be at least 6 characters long.";
+    } else {
+      authMessages.textContent = `Sign-up error: ${error.message}`;
+    }
+  } else if (data && (!data.user || data.user && !data.user.id)) {
+    console.warn("Sign-up successful but no user data returned or user ID is missing. This might indicate issues with email confirmation settings in Supabase.", data);
+    authMessages.textContent = "Sign-up may require email verification. Please check your inbox and Supabase settings.";
+    console.log("Sign-up data issue:", data);
   } else {
     authMessages.textContent = "Sign-up successful! Check your email for verification.";
-    console.log("Sign-up successful:", data);
+    console.log("Sign-up successful, user data:", data.user);
+    console.log("Sign-up data:", data);
   }
 }
 async function handleLogin() {
@@ -552,10 +582,18 @@ async function checkUserSession() {
   }
 }
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log("Auth event:", event, session);
+  console.log("onAuthStateChange - Event:", event, "Session:", session);
   const user = session ? session.user : null;
   updateAuthUI(user);
+  if (session && session.user) {
+    console.log("onAuthStateChange - User details: ID:", session.user.id, "Email:", session.user.email, "Authenticated:", session.user.aud);
+  } else if (session) {
+    console.warn("onAuthStateChange - Session exists but no user object found in session:", session);
+  } else {
+    console.log("onAuthStateChange - No active session.");
+  }
   if (event === "SIGNED_IN") {
+    console.log("onAuthStateChange - SIGNED_IN event detected. User should be authenticated.");
     authMessages.textContent = "Successfully logged in!";
   } else if (event === "SIGNED_OUT") {
     authMessages.textContent = "You have been logged out.";
@@ -568,13 +606,15 @@ supabase.auth.onAuthStateChange((event, session) => {
     if (loginPasswordInput)
       loginPasswordInput.value = "";
   } else if (event === "USER_UPDATED") {
+    console.log("onAuthStateChange - USER_UPDATED event. User details:", session ? session.user : "No session");
     authMessages.textContent = "User profile updated.";
   } else if (event === "PASSWORD_RECOVERY") {
     authMessages.textContent = "Password recovery email sent.";
   } else if (event === "TOKEN_REFRESHED") {
     console.log("Token refreshed");
+    console.log("onAuthStateChange - TOKEN_REFRESHED event. Current session:", session);
   }
-  if (authMessages.textContent && !authMessages.textContent.toLowerCase().includes("error")) {
+  if (authMessages.textContent && !authMessages.textContent.toLowerCase().includes("error") && !authMessages.textContent.toLowerCase().includes("check your email")) {
     setTimeout(() => {
       authMessages.textContent = "";
     }, 5e3);
