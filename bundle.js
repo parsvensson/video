@@ -438,6 +438,149 @@ async function fetchVideosFromSupabase() {
   }
 }
 
+// js/auth.js
+var signUpForm;
+var loginForm;
+var userStatus;
+var authMessages;
+var userEmailDisplay;
+var signUpButton;
+var loginButton;
+var logoutButton;
+var signUpEmailInput;
+var signUpPasswordInput;
+var loginEmailInput;
+var loginPasswordInput;
+function initAuthUI() {
+  signUpForm = document.getElementById("signUpForm");
+  loginForm = document.getElementById("loginForm");
+  userStatus = document.getElementById("userStatus");
+  authMessages = document.getElementById("authMessages");
+  userEmailDisplay = document.getElementById("userEmail");
+  signUpButton = document.getElementById("signUpButton");
+  loginButton = document.getElementById("loginButton");
+  logoutButton = document.getElementById("logoutButton");
+  signUpEmailInput = document.getElementById("signUpEmail");
+  signUpPasswordInput = document.getElementById("signUpPassword");
+  loginEmailInput = document.getElementById("loginEmail");
+  loginPasswordInput = document.getElementById("loginPassword");
+  if (signUpForm) {
+    signUpForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await handleSignUp();
+    });
+  }
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await handleLogin();
+    });
+  }
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async () => {
+      await handleLogout();
+    });
+  }
+}
+async function handleSignUp() {
+  const email = signUpEmailInput.value;
+  const password = signUpPasswordInput.value;
+  authMessages.textContent = "";
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    authMessages.textContent = `Sign-up error: ${error.message}`;
+    console.error("Sign-up error:", error);
+  } else {
+    authMessages.textContent = "Sign-up successful! Check your email for verification.";
+    console.log("Sign-up successful:", data);
+  }
+}
+async function handleLogin() {
+  const email = loginEmailInput.value;
+  const password = loginPasswordInput.value;
+  authMessages.textContent = "";
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    authMessages.textContent = `Login error: ${error.message}`;
+    console.error("Login error:", error);
+  } else {
+    console.log("Login successful:", data);
+  }
+}
+async function handleLogout() {
+  authMessages.textContent = "";
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    authMessages.textContent = `Logout error: ${error.message}`;
+    console.error("Logout error:", error);
+  } else {
+    console.log("Logout successful");
+  }
+}
+function updateAuthUI(user) {
+  if (user) {
+    if (signUpForm)
+      signUpForm.style.display = "none";
+    if (loginForm)
+      loginForm.style.display = "none";
+    if (userStatus)
+      userStatus.style.display = "block";
+    if (userEmailDisplay)
+      userEmailDisplay.textContent = user.email;
+    if (authMessages.textContent.includes("successful") || authMessages.textContent.includes("verification")) {
+    } else {
+      authMessages.textContent = "";
+    }
+  } else {
+    if (signUpForm)
+      signUpForm.style.display = "block";
+    if (loginForm)
+      loginForm.style.display = "block";
+    if (userStatus)
+      userStatus.style.display = "none";
+    if (userEmailDisplay)
+      userEmailDisplay.textContent = "";
+  }
+}
+async function checkUserSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    console.log("User session found:", session);
+  } else {
+    console.log("No active user session.");
+    updateAuthUI(null);
+  }
+}
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log("Auth event:", event, session);
+  const user = session ? session.user : null;
+  updateAuthUI(user);
+  if (event === "SIGNED_IN") {
+    authMessages.textContent = "Successfully logged in!";
+  } else if (event === "SIGNED_OUT") {
+    authMessages.textContent = "You have been logged out.";
+    if (signUpEmailInput)
+      signUpEmailInput.value = "";
+    if (signUpPasswordInput)
+      signUpPasswordInput.value = "";
+    if (loginEmailInput)
+      loginEmailInput.value = "";
+    if (loginPasswordInput)
+      loginPasswordInput.value = "";
+  } else if (event === "USER_UPDATED") {
+    authMessages.textContent = "User profile updated.";
+  } else if (event === "PASSWORD_RECOVERY") {
+    authMessages.textContent = "Password recovery email sent.";
+  } else if (event === "TOKEN_REFRESHED") {
+    console.log("Token refreshed");
+  }
+  if (authMessages.textContent && !authMessages.textContent.toLowerCase().includes("error")) {
+    setTimeout(() => {
+      authMessages.textContent = "";
+    }, 5e3);
+  }
+});
+
 // js/app.js
 var allVideos = [];
 var currentVideos = [];
@@ -464,6 +607,8 @@ var importStateInput = document.getElementById("importStateInput");
 var dataSourceIndicator = document.getElementById("dataSourceIndicator");
 async function initializeApp() {
   currentPage = loadCurrentPage();
+  initAuthUI();
+  await checkUserSession();
   fileInput.addEventListener("change", handleFileSelect);
   searchBar.addEventListener("input", handleSearchAndFilter);
   levelFilterElement.addEventListener("change", handleSearchAndFilter);
