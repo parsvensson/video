@@ -3,6 +3,7 @@ import { createVideoCard, formatDuration } from './ui/videoCard.js';
 import { openYouTubeVideo, trackWatchedVideo } from './utils/youtubeUtils.js';
 import { sortByDifficulty, searchVideos, applyFilters } from './utils/videoUtils.js';
 import { getVideosFromDB, saveVideosToDB, exportAppState, importAppState } from './utils/dbUtils.js';
+import { fetchVideosFromSupabase } from './utils/supabaseVideos.js';
 import { 
     loadTargetDifficulty as loadDifficultySetting,
     saveTargetDifficulty as saveDifficultySetting,
@@ -34,6 +35,7 @@ const viewHistoryButton = document.getElementById('viewHistoryButton');
 const exportStateButton = document.getElementById('exportStateButton');
 const importStateButton = document.getElementById('importStateButton');
 const importStateInput = document.getElementById('importStateInput');
+const dataSourceIndicator = document.getElementById('dataSourceIndicator');
 
 // --- Initialization ---
 async function initializeApp() {
@@ -71,29 +73,57 @@ async function initializeApp() {
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
 
-    // Load data from IndexedDB if available
-    try {
-        const dbVideos = await getVideosFromDB();
-        if (dbVideos) {
-            allVideos = dbVideos;
-            if (validateBasicStructure(allVideos)) {
-                console.log('Loaded data from IndexedDB');
-                targetDifficulty = loadDifficultySetting(); // Load from difficultyManager
-                if (targetDifficulty === null) {
-                    targetDifficulty = calculateInitialUserDifficulty(allVideos); // Calculate if not found
-                    saveDifficultySetting(targetDifficulty);
-                }
-                processAndDisplayVideos();
-            } else {
-                // This case should ideally not happen if data was saved correctly
-                console.warn('Invalid data structure in IndexedDB. Please re-select file.');
+    let loaded = false;
+
+    if (navigator.onLine && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+        const supaVideos = await fetchVideosFromSupabase();
+        if (supaVideos) {
+            const mappedVideos = supaVideos.map(v => ({
+                ...v,
+                difficultyScore: v.difficulty_score ?? v.difficultyScore,
+                sources: { youtube: v.youtube_id ?? v.sources?.youtube },
+                hostingId: v.youtube_id ?? v.hostingId,
+            }));
+            if (validateBasicStructure(mappedVideos)) {
+                allVideos = mappedVideos;
+                await saveVideosToDB(allVideos);
+                dataSourceIndicator.textContent = 'Supabase';
+                loaded = true;
             }
-        } else {
-            console.log('No data in IndexedDB. Please select a file.');
         }
-    } catch (error) {
-        console.error('Error loading data from IndexedDB:', error);
-        // Fallback or error message if DB access fails
+    }
+
+    if (!loaded) {
+        try {
+            const dbVideos = await getVideosFromDB();
+            if (dbVideos) {
+                allVideos = dbVideos;
+                if (validateBasicStructure(allVideos)) {
+                    console.log('Loaded data from IndexedDB');
+                    dataSourceIndicator.textContent = 'IndexedDB';
+                    targetDifficulty = loadDifficultySetting();
+                    if (targetDifficulty === null) {
+                        targetDifficulty = calculateInitialUserDifficulty(allVideos);
+                        saveDifficultySetting(targetDifficulty);
+                    }
+                    loaded = true;
+                } else {
+                    console.warn('Invalid data structure in IndexedDB. Please re-select file.');
+                }
+            } else {
+                console.log('No data in IndexedDB. Please select a file.');
+            }
+        } catch (error) {
+            console.error('Error loading data from IndexedDB:', error);
+        }
+    }
+
+    if (loaded) {
+        if (targetDifficulty === null) {
+            targetDifficulty = calculateInitialUserDifficulty(allVideos);
+            saveDifficultySetting(targetDifficulty);
+        }
+        processAndDisplayVideos();
     }
 }
 
@@ -128,6 +158,8 @@ async function handleFileSelect(event) {
             videoListElement.innerHTML = '<p>Loading videos...</p>';
             allVideos = await loadVideoData(file);
             await saveVideosToDB(allVideos); // Save to IndexedDB (from dbUtils.js)
+
+            dataSourceIndicator.textContent = 'Local file';
             
             targetDifficulty = loadDifficultySetting(); // Load from difficultyManager
             if (targetDifficulty === null || allVideos.length > 0) { // Recalculate if new file or no setting

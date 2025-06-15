@@ -17,6 +17,7 @@
         <button id="exportStateButton">Export State</button>
         <button id="importStateButton">Import State</button>
         <input type="file" id="importStateInput" accept="application/json" style="display:none">
+        <div id="dataSourceIndicator"></div>
     </header>
     <main>
         <div class="controls">
@@ -95,6 +96,12 @@
             float: right;
         }
     </style>
+
+
+    <script>
+      window.SUPABASE_URL='https://dzxzmneyogcypfaqusgi.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eHptbmV5b2djeXBmYXF1c2dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MTUxMTQsImV4cCI6MjA2NTQ5MTExNH0.M59Fd-oBAGNDconMvhfZy7tWtk8XIi71us2DUI73Sek';
+    </script>
     <script src="js/app.js" type="module"></script>
 </body>
 </html>

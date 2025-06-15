@@ -31,3 +31,9 @@ Then('a list of videos should be displayed on the page', async ({ page }) => {
   const videoCards = await page.locator('#videoList .video-card').count();
   assert.ok(videoCards > 0, 'No video cards were displayed on the page.');
 });
+Then('the data source indicator should show {string}', async ({ page }, expected) => {
+  const indicator = await page.locator('#dataSourceIndicator');
+  await indicator.waitFor({ state: 'attached', timeout: 2000 });
+  const text = await indicator.textContent();
+  assert.strictEqual(text.trim(), expected);
+});

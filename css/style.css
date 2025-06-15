@@ -55,6 +55,14 @@ header #importStateButton:hover {
     background-color: #f0f0f0;
 }
 
+#dataSourceIndicator {
+    margin-top: 0.5rem;
+    color: white;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+}
+
 main {
     padding: 1rem;
 }

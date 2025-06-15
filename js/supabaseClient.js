@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Environment variables are expected to be available at runtime.
 // For local development, define SUPABASE_URL and SUPABASE_ANON_KEY on window.

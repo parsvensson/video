@@ -5,3 +5,4 @@ Feature: File Upload Functionality
     When the user selects the "smaller_combined_videos.json" file for upload
     Then the video data from "smaller_combined_videos.json" should be loaded
     And a list of videos should be displayed on the page
+    And the data source indicator should show "Local file"
