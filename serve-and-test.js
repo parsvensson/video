@@ -17,7 +17,7 @@ try {
 }
 
 // Start the server (suppress stdout/stderr)
-const server = spawn('npx', ['serve', '.', '-l', PORT], {
+const server = spawn('npx', ['serve', 'dist', '-l', PORT], {
   stdio: ['ignore', 'ignore', 'ignore'],
   shell: true,
 });
