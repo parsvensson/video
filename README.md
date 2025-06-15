@@ -43,19 +43,41 @@ VideoBrowser is a desktop web application for browsing and launching YouTube vid
 
 ## How to Build and Run
 
-The project uses plain HTML and JavaScript and requires no build step.
+This project now uses `esbuild` to bundle JavaScript modules.
 
 ### Prerequisites
 
-* A modern web browser that supports ES6 Modules
-* A local JSON file conforming to `combined_videos_json_schema.json`
+*   A modern web browser.
+*   Node.js and npm installed (to manage dependencies and run build scripts).
+*   A local JSON file conforming to `combined_videos_json_schema.json` (if you want to load local data).
 
-### Running the Application
+### Setting up and Running Locally
 
-1. Open a local HTTP server in the project folder (e.g. `python -m http.server`)
-2. Navigate to the served URL in your browser.
-3. Click **Choose File** and select your JSON data file.
-4. Browse and launch videos.
+1.  **Install Dependencies:**
+    Open your terminal in the project root and run:
+    ```bash
+    npm install
+    ```
+    This will download `esbuild` and other necessary development packages.
+
+2.  **Build the Application:**
+    To create a production-ready bundle of the JavaScript code, run:
+    ```bash
+    npm run build
+    ```
+    This command creates a `dist/bundle.js` file. After this, you can open `index.html` directly in your browser, or serve it via a simple HTTP server.
+
+3.  **Development Workflow (with auto-rebuild):**
+    For easier development, you can use a watch command that automatically rebuilds the bundle whenever you change a JavaScript file.
+    In your terminal, run:
+    ```bash
+    npm run watch
+    ```
+    Then, open `index.html` in your browser (e.g., by using a live server extension in your IDE, or a simple command like `npx serve .`). The page will use the Supabase client to fetch data if not using a local file.
+    Note: For local development using Supabase, ensure `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set on the `window` object in `index.html`.
+
+4.  **Loading Local Data:**
+    Once the application is running in your browser (either after `npm run build` or using `npm run watch`), click the "Choose File" button (or equivalent UI element if it has changed) to select your JSON data file.
 
 ## Running Tests
 

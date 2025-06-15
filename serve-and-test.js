@@ -1,11 +1,20 @@
 // Serve and test script for Playwright
 // Usage: node serve-and-test.js
 
-const { exec } = require('child_process');
-const { spawn } = require('child_process');
+const { execSync, spawn } = require('child_process'); // Modified this line
 
 const PORT = 5000;
 const BASE_URL = `http://localhost:${PORT}`;
+
+// Build the application first
+try {
+  console.log('Building the application...');
+  execSync('npm run build', { stdio: 'inherit' });
+  console.log('Build successful.');
+} catch (error) {
+  console.error('Build failed:', error);
+  process.exit(1);
+}
 
 // Start the server (suppress stdout/stderr)
 const server = spawn('npx', ['serve', '.', '-l', PORT], {

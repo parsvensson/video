@@ -4,13 +4,16 @@
   "scripts": {
     "test:e2e": "node serve-and-test.js",
     "report:e2e": "playwright show-report",
-    "test:bdd": "playwright-bdd"
+    "test:bdd": "playwright-bdd",
+    "build": "esbuild js/app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --sourcemap",
+    "watch": "esbuild js/app.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --sourcemap --watch"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "playwright": "^1.52.0",
     "playwright-bdd": "^8.2.1",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "esbuild": "^0.20.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

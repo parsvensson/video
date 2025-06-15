@@ -31,3 +31,6 @@ playwright-report/
 
 # Generated features folder
 .features-gen/
+
+# Build output
+dist/
