@@ -39,384 +39,6 @@ function validateBasicStructure(data) {
   return true;
 }
 
-// js/learning/difficultyManager.js
-var TARGET_DIFFICULTY_KEY = "targetDifficulty";
-var FEEDBACK_HISTORY_KEY = "feedbackHistory";
-var DIFFICULTY_ADJUSTMENT_STEP = 5;
-function loadTargetDifficulty() {
-  const savedDifficulty = localStorage.getItem(TARGET_DIFFICULTY_KEY);
-  if (savedDifficulty !== null) {
-    return parseFloat(savedDifficulty);
-  }
-  return null;
-}
-function saveTargetDifficulty(difficulty) {
-  if (difficulty !== null) {
-    localStorage.setItem(TARGET_DIFFICULTY_KEY, difficulty.toString());
-  }
-}
-function loadFeedbackHistory() {
-  const history = localStorage.getItem(FEEDBACK_HISTORY_KEY);
-  return history ? JSON.parse(history) : [];
-}
-function saveFeedbackHistory(history) {
-  localStorage.setItem(FEEDBACK_HISTORY_KEY, JSON.stringify(history));
-}
-function recordFeedback(videoId, videoDifficultyScore, feedbackType, currentTargetDifficulty) {
-  let newTargetDifficulty = currentTargetDifficulty;
-  const feedbackHistory = loadFeedbackHistory();
-  feedbackHistory.push({
-    videoId,
-    videoDifficultyScore,
-    feedback: feedbackType,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
-  });
-  saveFeedbackHistory(feedbackHistory);
-  switch (feedbackType) {
-    case "tooEasy":
-      newTargetDifficulty = Math.min(100, currentTargetDifficulty + DIFFICULTY_ADJUSTMENT_STEP);
-      break;
-    case "tooHard":
-      newTargetDifficulty = Math.max(0, currentTargetDifficulty - DIFFICULTY_ADJUSTMENT_STEP);
-      break;
-    case "rightLevel":
-      if (Math.abs(currentTargetDifficulty - videoDifficultyScore) > DIFFICULTY_ADJUSTMENT_STEP / 2) {
-        newTargetDifficulty = currentTargetDifficulty + (videoDifficultyScore - currentTargetDifficulty) / 2;
-      }
-      newTargetDifficulty = Math.max(0, Math.min(100, newTargetDifficulty));
-      break;
-    default:
-      console.warn(`Unknown feedback type: ${feedbackType}`);
-      return currentTargetDifficulty;
-  }
-  newTargetDifficulty = Math.max(0, Math.min(100, newTargetDifficulty));
-  saveTargetDifficulty(newTargetDifficulty);
-  return newTargetDifficulty;
-}
-function calculateInitialDifficulty(allVideos2) {
-  if (!allVideos2 || allVideos2.length === 0) {
-    return 50;
-  }
-  const difficultyScores = allVideos2.map((v) => v.difficultyScore).sort((a, b) => a - b);
-  const mid = Math.floor(difficultyScores.length / 2);
-  let medianDifficulty;
-  if (difficultyScores.length % 2 !== 0) {
-    medianDifficulty = difficultyScores[mid];
-  } else {
-    medianDifficulty = (difficultyScores[mid - 1] + difficultyScores[mid]) / 2;
-  }
-  return Math.max(0, Math.min(100, medianDifficulty));
-}
-function getLatestFeedbackForVideo(videoId) {
-  const feedbackHistory = loadFeedbackHistory();
-  const videoFeedback = feedbackHistory.filter((entry) => entry.videoId === videoId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  return videoFeedback.length > 0 ? videoFeedback[0] : null;
-}
-
-// js/ui/videoCard.js
-function appendClickableItems(element, label, items, className) {
-  element.textContent = `${label}: `;
-  if (Array.isArray(items) && items.length > 0) {
-    items.forEach((item, index) => {
-      if (index > 0)
-        element.append(", ");
-      const span = document.createElement("span");
-      span.className = className;
-      span.textContent = item;
-      element.appendChild(span);
-    });
-  } else {
-    element.append("N/A");
-  }
-}
-function createVideoCard(video, onWatchCallback, onTooEasyCallback, onTooHardCallback, onRightLevelCallback, isWatched) {
-  const cardElement = document.createElement("div");
-  cardElement.className = "video-card";
-  if (isWatched) {
-    cardElement.classList.add("watched");
-    const watchedBadge = document.createElement("span");
-    watchedBadge.className = "watched-indicator";
-    watchedBadge.textContent = "Watched";
-    cardElement.appendChild(watchedBadge);
-  }
-  cardElement.dataset.videoId = video._id;
-  const titleElement = document.createElement("h3");
-  titleElement.textContent = video.title;
-  const latestFeedback = getLatestFeedbackForVideo(video._id);
-  if (latestFeedback) {
-    const feedbackDisplay = document.createElement("p");
-    feedbackDisplay.className = "latest-feedback";
-    const ratedDate = new Date(latestFeedback.timestamp).toLocaleDateString();
-    let feedbackText = "Previously rated: ";
-    switch (latestFeedback.feedback) {
-      case "tooEasy":
-        feedbackText += "Too Easy";
-        break;
-      case "tooHard":
-        feedbackText += "Too Hard";
-        break;
-      case "rightLevel":
-        feedbackText += "Right Level";
-        break;
-    }
-    feedbackDisplay.textContent = `${feedbackText} on ${ratedDate}`;
-    cardElement.appendChild(feedbackDisplay);
-  }
-  const guidesElement = document.createElement("p");
-  guidesElement.className = "guides";
-  appendClickableItems(guidesElement, "Guides", video.guides, "clickable-guide");
-  guidesElement.addEventListener("click", (event) => {
-    if (event.target.classList.contains("clickable-guide")) {
-      guidesElement.dispatchEvent(new CustomEvent("guideClicked", {
-        bubbles: true,
-        detail: event.target.textContent
-      }));
-    }
-  });
-  const metadataElement = document.createElement("div");
-  metadataElement.className = "metadata";
-  const durationSpan = document.createElement("span");
-  durationSpan.className = "duration";
-  durationSpan.textContent = `Duration: ${formatDuration(video.duration)}`;
-  const difficultySpan = document.createElement("span");
-  difficultySpan.className = "difficulty";
-  difficultySpan.textContent = `Difficulty: ${video.difficultyScore}`;
-  const levelSpan = document.createElement("span");
-  levelSpan.className = "level";
-  levelSpan.textContent = `Level: ${video.level}`;
-  metadataElement.append(durationSpan, difficultySpan, levelSpan);
-  const watchButton = document.createElement("button");
-  watchButton.className = "watch-button";
-  watchButton.textContent = "Watch on YouTube";
-  watchButton.addEventListener("click", () => onWatchCallback(video));
-  const feedbackButtonsContainer = document.createElement("div");
-  feedbackButtonsContainer.className = "feedback-buttons";
-  const tooEasyButton = document.createElement("button");
-  tooEasyButton.className = "too-easy-button";
-  tooEasyButton.textContent = "Too Easy";
-  tooEasyButton.addEventListener("click", () => onTooEasyCallback(video));
-  const tooHardButton = document.createElement("button");
-  tooHardButton.className = "too-hard-button";
-  tooHardButton.textContent = "Too Hard";
-  tooHardButton.addEventListener("click", () => onTooHardCallback(video));
-  const rightLevelButton = document.createElement("button");
-  rightLevelButton.className = "right-level-button";
-  rightLevelButton.textContent = "Right Level";
-  rightLevelButton.addEventListener("click", () => onRightLevelCallback(video));
-  feedbackButtonsContainer.append(tooEasyButton, rightLevelButton, tooHardButton);
-  const detailsContainer = document.createElement("div");
-  detailsContainer.className = "video-details-extra";
-  detailsContainer.style.display = "none";
-  const descriptionElement = document.createElement("p");
-  descriptionElement.textContent = `Description: ${video.description || "N/A"}`;
-  const tagsElement = document.createElement("p");
-  appendClickableItems(tagsElement, "Tags", video.tags, "clickable-tag");
-  tagsElement.addEventListener("click", (event) => {
-    if (event.target.classList.contains("clickable-tag")) {
-      tagsElement.dispatchEvent(new CustomEvent("tagClicked", {
-        bubbles: true,
-        detail: event.target.textContent
-      }));
-    }
-  });
-  const guidesDetailsElement = document.createElement("p");
-  appendClickableItems(guidesDetailsElement, "Guides", video.guides, "clickable-guide");
-  guidesDetailsElement.addEventListener("click", (event) => {
-    if (event.target.classList.contains("clickable-guide")) {
-      guidesDetailsElement.dispatchEvent(new CustomEvent("guideClicked", {
-        bubbles: true,
-        detail: event.target.textContent
-      }));
-    }
-  });
-  detailsContainer.append(descriptionElement, tagsElement, guidesDetailsElement);
-  const expandButton = document.createElement("button");
-  expandButton.className = "expand-details-button";
-  expandButton.textContent = "Show Details";
-  expandButton.addEventListener("click", () => {
-    const isHidden = detailsContainer.style.display === "none";
-    detailsContainer.style.display = isHidden ? "block" : "none";
-    expandButton.textContent = isHidden ? "Hide Details" : "Show Details";
-  });
-  cardElement.append(titleElement, guidesElement, metadataElement, watchButton, feedbackButtonsContainer, expandButton, detailsContainer);
-  return cardElement;
-}
-function formatDuration(totalSeconds) {
-  if (isNaN(totalSeconds) || totalSeconds < 0) {
-    return "00:00";
-  }
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-// js/utils/youtubeUtils.js
-function openYouTubeVideo(youtubeId) {
-  if (!youtubeId) {
-    console.error("YouTube ID is missing.");
-    return;
-  }
-  const youtubeUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
-  window.open(youtubeUrl, "_blank");
-}
-function trackWatchedVideo(videoId) {
-  if (!videoId)
-    return;
-  try {
-    let watchedHistory = JSON.parse(localStorage.getItem("watchedHistory") || "[]");
-    if (!watchedHistory.includes(videoId)) {
-      watchedHistory.push(videoId);
-      localStorage.setItem("watchedHistory", JSON.stringify(watchedHistory));
-    }
-    let watchedDates = JSON.parse(localStorage.getItem("watchedDates") || "{}");
-    watchedDates[videoId] = (/* @__PURE__ */ new Date()).toISOString();
-    localStorage.setItem("watchedDates", JSON.stringify(watchedDates));
-    console.log(`Tracked video ${videoId} as watched.`);
-  } catch (error) {
-    console.error("Error tracking watched video:", error);
-  }
-}
-
-// js/utils/videoUtils.js
-function searchVideos(videos, query) {
-  const searchTerm = query.toLowerCase().trim();
-  if (!searchTerm)
-    return videos;
-  return videos.filter((video) => {
-    if (video.title && video.title.toLowerCase().includes(searchTerm))
-      return true;
-    if (video.tags && video.tags.some((tag) => tag.toLowerCase().includes(searchTerm)))
-      return true;
-    if (video.guides && video.guides.some((guide) => guide.toLowerCase().includes(searchTerm)))
-      return true;
-    return false;
-  });
-}
-function applyFilters(videos, filters) {
-  return videos.filter((video) => {
-    if (filters.level && video.level !== filters.level)
-      return false;
-    if (filters.soundQuality && video.soundQuality !== filters.soundQuality)
-      return false;
-    if (filters.guide && video.guides && !video.guides.includes(filters.guide))
-      return false;
-    return true;
-  });
-}
-
-// js/utils/dbUtils.js
-var DB_NAME = "VideoBrowserDB";
-var STORE_NAME = "videos";
-var DB_VERSION = 1;
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "_id" });
-      }
-    };
-    request.onsuccess = (event) => {
-      resolve(event.target.result);
-    };
-    request.onerror = (event) => {
-      console.error("IndexedDB error:", event.target.error);
-      reject("Error opening IndexedDB.");
-    };
-  });
-}
-async function saveVideosToDB(videos) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
-    const clearRequest = store.clear();
-    clearRequest.onsuccess = () => {
-      videos.forEach((video) => {
-        store.put(video);
-      });
-    };
-    clearRequest.onerror = (event) => {
-      console.error("Error clearing store:", event.target.error);
-      reject("Error clearing store before saving new videos.");
-    };
-    transaction.oncomplete = () => {
-      console.log("Videos saved to IndexedDB successfully.");
-      resolve();
-    };
-    transaction.onerror = (event) => {
-      console.error("Error saving videos to IndexedDB:", event.target.error);
-      reject("Error saving videos to IndexedDB.");
-    };
-  });
-}
-async function getVideosFromDB() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], "readonly");
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.getAll();
-    request.onsuccess = (event) => {
-      if (event.target.result && event.target.result.length > 0) {
-        resolve(event.target.result);
-      } else {
-        resolve(null);
-      }
-    };
-    request.onerror = (event) => {
-      console.error("Error fetching videos from IndexedDB:", event.target.error);
-      reject("Error fetching videos from IndexedDB.");
-    };
-  });
-}
-async function exportAppState() {
-  const db = await openDB();
-  const videos = await new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-  const state = {
-    videos,
-    localStorage: {
-      targetDifficulty: localStorage.getItem("targetDifficulty"),
-      feedbackHistory: JSON.parse(localStorage.getItem("feedbackHistory") || "[]"),
-      watchedHistory: JSON.parse(localStorage.getItem("watchedHistory") || "[]"),
-      watchedDates: JSON.parse(localStorage.getItem("watchedDates") || "{}"),
-      currentPage: localStorage.getItem("currentPage")
-    }
-  };
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "videobrowser_state.json";
-  document.body.appendChild(link);
-  link.click();
-  URL.revokeObjectURL(link.href);
-  link.remove();
-}
-async function importAppState(file) {
-  const text = await file.text();
-  const state = JSON.parse(text);
-  const ls = state.localStorage || {};
-  if (ls.targetDifficulty !== void 0)
-    localStorage.setItem("targetDifficulty", ls.targetDifficulty);
-  if (ls.feedbackHistory)
-    localStorage.setItem("feedbackHistory", JSON.stringify(ls.feedbackHistory));
-  if (ls.watchedHistory)
-    localStorage.setItem("watchedHistory", JSON.stringify(ls.watchedHistory));
-  if (ls.watchedDates)
-    localStorage.setItem("watchedDates", JSON.stringify(ls.watchedDates));
-  if (ls.currentPage !== void 0)
-    localStorage.setItem("currentPage", ls.currentPage);
-  if (Array.isArray(state.videos)) {
-    await saveVideosToDB(state.videos);
-  }
-}
-
 // js/supabaseClient.js
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 var SUPABASE_URL = window.SUPABASE_URL || "";
@@ -427,21 +49,6 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error("Supabase URL or Anon Key is missing. Please check environment variables or window object.");
 }
 var supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// js/utils/supabaseVideos.js
-async function fetchVideosFromSupabase() {
-  try {
-    const { data, error } = await supabase.from("videos").select("*");
-    if (error) {
-      console.error("Supabase fetch error:", error);
-      return null;
-    }
-    return data || null;
-  } catch (err) {
-    console.error("Supabase fetch failed:", err);
-    return null;
-  }
-}
 
 // js/auth.js
 var signUpForm;
@@ -620,6 +227,498 @@ supabase.auth.onAuthStateChange((event, session) => {
     }, 5e3);
   }
 });
+async function getCurrentUser() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    }
+    return data?.user || null;
+  } catch (e) {
+    console.error("Exception in getCurrentUser:", e);
+    return null;
+  }
+}
+
+// js/learning/difficultyManager.js
+var TARGET_DIFFICULTY_KEY = "targetDifficulty";
+var FEEDBACK_HISTORY_KEY = "feedbackHistory";
+var DIFFICULTY_ADJUSTMENT_STEP = 5;
+async function loadTargetDifficulty() {
+  const user = await getCurrentUser();
+  if (user) {
+    try {
+      const { data, error } = await supabase.from("user_profiles").select("target_difficulty").eq("id", user.id).single();
+      if (error) {
+        console.error("Error loading target difficulty from Supabase:", error);
+      } else if (data && data.target_difficulty !== null) {
+        return parseFloat(data.target_difficulty);
+      }
+    } catch (e) {
+      console.error("Exception loading target difficulty from Supabase:", e);
+    }
+  }
+  const savedDifficulty = localStorage.getItem(TARGET_DIFFICULTY_KEY);
+  if (savedDifficulty !== null) {
+    return parseFloat(savedDifficulty);
+  }
+  return null;
+}
+async function saveTargetDifficulty(difficulty) {
+  if (difficulty === null)
+    return;
+  const user = await getCurrentUser();
+  if (user) {
+    try {
+      const { error } = await supabase.from("user_profiles").upsert({
+        id: user.id,
+        target_difficulty: difficulty,
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      if (error) {
+        console.error("Error saving target difficulty to Supabase:", error);
+      }
+    } catch (e) {
+      console.error("Exception saving target difficulty to Supabase:", e);
+    }
+  }
+  localStorage.setItem(TARGET_DIFFICULTY_KEY, difficulty.toString());
+}
+async function loadFeedbackHistory() {
+  const user = await getCurrentUser();
+  if (user) {
+    try {
+      const { data, error } = await supabase.from("user_profiles").select("feedback_history").eq("id", user.id).single();
+      if (error) {
+        console.error("Error loading feedback history from Supabase:", error);
+      } else if (data && data.feedback_history) {
+        return data.feedback_history;
+      }
+    } catch (e) {
+      console.error("Exception loading feedback history from Supabase:", e);
+    }
+  }
+  const history = localStorage.getItem(FEEDBACK_HISTORY_KEY);
+  return history ? JSON.parse(history) : [];
+}
+async function saveFeedbackHistory(history) {
+  const user = await getCurrentUser();
+  if (user) {
+    try {
+      const { error } = await supabase.from("user_profiles").upsert({
+        id: user.id,
+        feedback_history: history,
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      if (error) {
+        console.error("Error saving feedback history to Supabase:", error);
+      }
+    } catch (e) {
+      console.error("Exception saving feedback history to Supabase:", e);
+    }
+  }
+  localStorage.setItem(FEEDBACK_HISTORY_KEY, JSON.stringify(history));
+}
+async function recordFeedback(videoId, videoDifficultyScore, feedbackType, currentTargetDifficulty) {
+  let newTargetDifficulty = currentTargetDifficulty;
+  const feedbackHistory = await loadFeedbackHistory();
+  feedbackHistory.push({
+    videoId,
+    videoDifficultyScore,
+    feedback: feedbackType,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  await saveFeedbackHistory(feedbackHistory);
+  switch (feedbackType) {
+    case "tooEasy":
+      newTargetDifficulty = Math.min(100, currentTargetDifficulty + DIFFICULTY_ADJUSTMENT_STEP);
+      break;
+    case "tooHard":
+      newTargetDifficulty = Math.max(0, currentTargetDifficulty - DIFFICULTY_ADJUSTMENT_STEP);
+      break;
+    case "rightLevel":
+      if (Math.abs(currentTargetDifficulty - videoDifficultyScore) > DIFFICULTY_ADJUSTMENT_STEP / 2) {
+        newTargetDifficulty = currentTargetDifficulty + (videoDifficultyScore - currentTargetDifficulty) / 2;
+      }
+      newTargetDifficulty = Math.max(0, Math.min(100, newTargetDifficulty));
+      break;
+    default:
+      console.warn(`Unknown feedback type: ${feedbackType}`);
+      return currentTargetDifficulty;
+  }
+  newTargetDifficulty = Math.max(0, Math.min(100, newTargetDifficulty));
+  await saveTargetDifficulty(newTargetDifficulty);
+  return newTargetDifficulty;
+}
+function calculateInitialDifficulty(allVideos2) {
+  if (!allVideos2 || allVideos2.length === 0) {
+    return 50;
+  }
+  const difficultyScores = allVideos2.map((v) => v.difficultyScore).sort((a, b) => a - b);
+  const mid = Math.floor(difficultyScores.length / 2);
+  let medianDifficulty;
+  if (difficultyScores.length % 2 !== 0) {
+    medianDifficulty = difficultyScores[mid];
+  } else {
+    medianDifficulty = (difficultyScores[mid - 1] + difficultyScores[mid]) / 2;
+  }
+  return Math.max(0, Math.min(100, medianDifficulty));
+}
+async function getLatestFeedbackForVideo(videoId) {
+  const feedbackHistory = await loadFeedbackHistory();
+  const videoFeedback = feedbackHistory.filter((entry) => entry.videoId === videoId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return videoFeedback.length > 0 ? videoFeedback[0] : null;
+}
+
+// js/ui/videoCard.js
+function appendClickableItems(element, label, items, className) {
+  element.textContent = `${label}: `;
+  if (Array.isArray(items) && items.length > 0) {
+    items.forEach((item, index) => {
+      if (index > 0)
+        element.append(", ");
+      const span = document.createElement("span");
+      span.className = className;
+      span.textContent = item;
+      element.appendChild(span);
+    });
+  } else {
+    element.append("N/A");
+  }
+}
+function createVideoCard(video, onWatchCallback, onTooEasyCallback, onTooHardCallback, onRightLevelCallback, isWatched) {
+  const cardElement = document.createElement("div");
+  cardElement.className = "video-card";
+  if (isWatched) {
+    cardElement.classList.add("watched");
+    const watchedBadge = document.createElement("span");
+    watchedBadge.className = "watched-indicator";
+    watchedBadge.textContent = "Watched";
+    cardElement.appendChild(watchedBadge);
+  }
+  cardElement.dataset.videoId = video._id;
+  const titleElement = document.createElement("h3");
+  titleElement.textContent = video.title;
+  const latestFeedback = getLatestFeedbackForVideo(video._id);
+  if (latestFeedback) {
+    const feedbackDisplay = document.createElement("p");
+    feedbackDisplay.className = "latest-feedback";
+    const ratedDate = new Date(latestFeedback.timestamp).toLocaleDateString();
+    let feedbackText = "Previously rated: ";
+    switch (latestFeedback.feedback) {
+      case "tooEasy":
+        feedbackText += "Too Easy";
+        break;
+      case "tooHard":
+        feedbackText += "Too Hard";
+        break;
+      case "rightLevel":
+        feedbackText += "Right Level";
+        break;
+    }
+    feedbackDisplay.textContent = `${feedbackText} on ${ratedDate}`;
+    cardElement.appendChild(feedbackDisplay);
+  }
+  const guidesElement = document.createElement("p");
+  guidesElement.className = "guides";
+  appendClickableItems(guidesElement, "Guides", video.guides, "clickable-guide");
+  guidesElement.addEventListener("click", (event) => {
+    if (event.target.classList.contains("clickable-guide")) {
+      guidesElement.dispatchEvent(new CustomEvent("guideClicked", {
+        bubbles: true,
+        detail: event.target.textContent
+      }));
+    }
+  });
+  const metadataElement = document.createElement("div");
+  metadataElement.className = "metadata";
+  const durationSpan = document.createElement("span");
+  durationSpan.className = "duration";
+  durationSpan.textContent = `Duration: ${formatDuration(video.duration)}`;
+  const difficultySpan = document.createElement("span");
+  difficultySpan.className = "difficulty";
+  difficultySpan.textContent = `Difficulty: ${video.difficultyScore}`;
+  const levelSpan = document.createElement("span");
+  levelSpan.className = "level";
+  levelSpan.textContent = `Level: ${video.level}`;
+  metadataElement.append(durationSpan, difficultySpan, levelSpan);
+  const watchButton = document.createElement("button");
+  watchButton.className = "watch-button";
+  watchButton.textContent = "Watch on YouTube";
+  watchButton.addEventListener("click", () => onWatchCallback(video));
+  const feedbackButtonsContainer = document.createElement("div");
+  feedbackButtonsContainer.className = "feedback-buttons";
+  const tooEasyButton = document.createElement("button");
+  tooEasyButton.className = "too-easy-button";
+  tooEasyButton.textContent = "Too Easy";
+  tooEasyButton.addEventListener("click", () => onTooEasyCallback(video));
+  const tooHardButton = document.createElement("button");
+  tooHardButton.className = "too-hard-button";
+  tooHardButton.textContent = "Too Hard";
+  tooHardButton.addEventListener("click", () => onTooHardCallback(video));
+  const rightLevelButton = document.createElement("button");
+  rightLevelButton.className = "right-level-button";
+  rightLevelButton.textContent = "Right Level";
+  rightLevelButton.addEventListener("click", () => onRightLevelCallback(video));
+  feedbackButtonsContainer.append(tooEasyButton, rightLevelButton, tooHardButton);
+  const detailsContainer = document.createElement("div");
+  detailsContainer.className = "video-details-extra";
+  detailsContainer.style.display = "none";
+  const descriptionElement = document.createElement("p");
+  descriptionElement.textContent = `Description: ${video.description || "N/A"}`;
+  const tagsElement = document.createElement("p");
+  appendClickableItems(tagsElement, "Tags", video.tags, "clickable-tag");
+  tagsElement.addEventListener("click", (event) => {
+    if (event.target.classList.contains("clickable-tag")) {
+      tagsElement.dispatchEvent(new CustomEvent("tagClicked", {
+        bubbles: true,
+        detail: event.target.textContent
+      }));
+    }
+  });
+  const guidesDetailsElement = document.createElement("p");
+  appendClickableItems(guidesDetailsElement, "Guides", video.guides, "clickable-guide");
+  guidesDetailsElement.addEventListener("click", (event) => {
+    if (event.target.classList.contains("clickable-guide")) {
+      guidesDetailsElement.dispatchEvent(new CustomEvent("guideClicked", {
+        bubbles: true,
+        detail: event.target.textContent
+      }));
+    }
+  });
+  detailsContainer.append(descriptionElement, tagsElement, guidesDetailsElement);
+  const expandButton = document.createElement("button");
+  expandButton.className = "expand-details-button";
+  expandButton.textContent = "Show Details";
+  expandButton.addEventListener("click", () => {
+    const isHidden = detailsContainer.style.display === "none";
+    detailsContainer.style.display = isHidden ? "block" : "none";
+    expandButton.textContent = isHidden ? "Hide Details" : "Show Details";
+  });
+  cardElement.append(titleElement, guidesElement, metadataElement, watchButton, feedbackButtonsContainer, expandButton, detailsContainer);
+  return cardElement;
+}
+function formatDuration(totalSeconds) {
+  if (isNaN(totalSeconds) || totalSeconds < 0) {
+    return "00:00";
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+// js/utils/youtubeUtils.js
+function openYouTubeVideo(youtubeId) {
+  if (!youtubeId) {
+    console.error("YouTube ID is missing.");
+    return;
+  }
+  const youtubeUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+  window.open(youtubeUrl, "_blank");
+}
+async function trackWatchedVideo(videoId) {
+  if (!videoId)
+    return;
+  const user = await getCurrentUser();
+  if (user) {
+    try {
+      let { data: profile, error: fetchError } = await supabase.from("user_profiles").select("watched_history, watched_dates").eq("id", user.id).single();
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error fetching user profile for watched history:", fetchError);
+        return;
+      }
+      let watchedHistory = profile && profile.watched_history ? profile.watched_history : [];
+      let watchedDates = profile && profile.watched_dates ? profile.watched_dates : {};
+      if (!watchedHistory.includes(videoId)) {
+        watchedHistory.push(videoId);
+      }
+      watchedDates[videoId] = (/* @__PURE__ */ new Date()).toISOString();
+      const { error: upsertError } = await supabase.from("user_profiles").upsert({
+        id: user.id,
+        watched_history: watchedHistory,
+        watched_dates: watchedDates,
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      if (upsertError) {
+        console.error("Error updating watched history in Supabase:", upsertError);
+      } else {
+        console.log(`Tracked video ${videoId} as watched in Supabase for user ${user.id}.`);
+      }
+    } catch (error) {
+      console.error("Exception tracking watched video in Supabase:", error);
+    }
+  } else {
+    try {
+      let watchedHistory = JSON.parse(localStorage.getItem("watchedHistory") || "[]");
+      if (!watchedHistory.includes(videoId)) {
+        watchedHistory.push(videoId);
+        localStorage.setItem("watchedHistory", JSON.stringify(watchedHistory));
+      }
+      let watchedDates = JSON.parse(localStorage.getItem("watchedDates") || "{}");
+      watchedDates[videoId] = (/* @__PURE__ */ new Date()).toISOString();
+      localStorage.setItem("watchedDates", JSON.stringify(watchedDates));
+      console.log(`Tracked video ${videoId} as watched in localStorage.`);
+    } catch (error) {
+      console.error("Error tracking watched video in localStorage:", error);
+    }
+  }
+}
+
+// js/utils/videoUtils.js
+function searchVideos(videos, query) {
+  const searchTerm = query.toLowerCase().trim();
+  if (!searchTerm)
+    return videos;
+  return videos.filter((video) => {
+    if (video.title && video.title.toLowerCase().includes(searchTerm))
+      return true;
+    if (video.tags && video.tags.some((tag) => tag.toLowerCase().includes(searchTerm)))
+      return true;
+    if (video.guides && video.guides.some((guide) => guide.toLowerCase().includes(searchTerm)))
+      return true;
+    return false;
+  });
+}
+function applyFilters(videos, filters) {
+  return videos.filter((video) => {
+    if (filters.level && video.level !== filters.level)
+      return false;
+    if (filters.soundQuality && video.soundQuality !== filters.soundQuality)
+      return false;
+    if (filters.guide && video.guides && !video.guides.includes(filters.guide))
+      return false;
+    return true;
+  });
+}
+
+// js/utils/dbUtils.js
+var DB_NAME = "VideoBrowserDB";
+var STORE_NAME = "videos";
+var DB_VERSION = 1;
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "_id" });
+      }
+    };
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+    request.onerror = (event) => {
+      console.error("IndexedDB error:", event.target.error);
+      reject("Error opening IndexedDB.");
+    };
+  });
+}
+async function saveVideosToDB(videos) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const clearRequest = store.clear();
+    clearRequest.onsuccess = () => {
+      videos.forEach((video) => {
+        store.put(video);
+      });
+    };
+    clearRequest.onerror = (event) => {
+      console.error("Error clearing store:", event.target.error);
+      reject("Error clearing store before saving new videos.");
+    };
+    transaction.oncomplete = () => {
+      console.log("Videos saved to IndexedDB successfully.");
+      resolve();
+    };
+    transaction.onerror = (event) => {
+      console.error("Error saving videos to IndexedDB:", event.target.error);
+      reject("Error saving videos to IndexedDB.");
+    };
+  });
+}
+async function getVideosFromDB() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+    request.onsuccess = (event) => {
+      if (event.target.result && event.target.result.length > 0) {
+        resolve(event.target.result);
+      } else {
+        resolve(null);
+      }
+    };
+    request.onerror = (event) => {
+      console.error("Error fetching videos from IndexedDB:", event.target.error);
+      reject("Error fetching videos from IndexedDB.");
+    };
+  });
+}
+async function exportAppState() {
+  const db = await openDB();
+  const videos = await new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_NAME], "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+  const state = {
+    videos,
+    localStorage: {
+      targetDifficulty: localStorage.getItem("targetDifficulty"),
+      feedbackHistory: JSON.parse(localStorage.getItem("feedbackHistory") || "[]"),
+      watchedHistory: JSON.parse(localStorage.getItem("watchedHistory") || "[]"),
+      watchedDates: JSON.parse(localStorage.getItem("watchedDates") || "{}"),
+      currentPage: localStorage.getItem("currentPage")
+    }
+  };
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "videobrowser_state.json";
+  document.body.appendChild(link);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  link.remove();
+}
+async function importAppState(file) {
+  const text = await file.text();
+  const state = JSON.parse(text);
+  const ls = state.localStorage || {};
+  if (ls.targetDifficulty !== void 0)
+    localStorage.setItem("targetDifficulty", ls.targetDifficulty);
+  if (ls.feedbackHistory)
+    localStorage.setItem("feedbackHistory", JSON.stringify(ls.feedbackHistory));
+  if (ls.watchedHistory)
+    localStorage.setItem("watchedHistory", JSON.stringify(ls.watchedHistory));
+  if (ls.watchedDates)
+    localStorage.setItem("watchedDates", JSON.stringify(ls.watchedDates));
+  if (ls.currentPage !== void 0)
+    localStorage.setItem("currentPage", ls.currentPage);
+  if (Array.isArray(state.videos)) {
+    await saveVideosToDB(state.videos);
+  }
+}
+
+// js/utils/supabaseVideos.js
+async function fetchVideosFromSupabase() {
+  try {
+    const { data, error } = await supabase.from("videos").select("*");
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return null;
+    }
+    return data || null;
+  } catch (err) {
+    console.error("Supabase fetch failed:", err);
+    return null;
+  }
+}
 
 // js/app.js
 var allVideos = [];
@@ -895,9 +994,9 @@ function changePage(newPage) {
     renderVideoPage();
   }
 }
-function handleWatchVideo(video) {
+async function handleWatchVideo(video) {
   openYouTubeVideo(video.sources.youtube || video.hostingId);
-  trackWatchedVideo(video._id);
+  await trackWatchedVideo(video._id);
   renderVideoPage();
 }
 function handleTooEasy(video) {
